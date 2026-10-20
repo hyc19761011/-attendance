@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>出勤申請系統</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #edf0f4;
+        --card: #ffffff;
+        --ink: #1b2735;
+        --muted: #5d6f81;
+        --line: #d8e0e9;
+        --field-bg: #ffffff;
+        --header: #152a42;
+        --header-ink: #f2f6fb;
+        --header-sub: #a9bfd6;
+        --accent: #1c5fae;
+        --accent-dark: #174c8c;
+        --accent-soft: #e2ecf9;
+        --seg-bg: #e6ecf3;
+        --danger: #b3372a;
+        --danger-bg: #fdecea;
+        --ok: #1e7d4f;
+        --ok-bg: #e4f3ea;
+        --warn: #8f6208;
+        --warn-bg: #fdf2d3;
+        --info: #1c5fae;
+        --info-bg: #e2ecf9;
+        --teal: #0e7268;
+        --teal-bg: #e0f2ef;
+        --shadow: 0 1px 3px rgba(21, 42, 66, 0.1), 0 4px 14px rgba(21, 42, 66, 0.06);
+        --radius: 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e141b;
+          --card: #1a232e;
+          --ink: #e8eef4;
+          --muted: #9db0c0;
+          --line: #2d3a48;
+          --field-bg: #141d27;
+          --header: #0a131f;
+          --header-ink: #eef4fa;
+          --header-sub: #8ba3bb;
+          --accent: #4f93dd;
+          --accent-dark: #6aa5e2;
+          --accent-soft: #21374f;
+          --seg-bg: #232f3d;
+          --danger: #f0937f;
+          --danger-bg: #3d2320;
+          --ok: #5cc48d;
+          --ok-bg: #173528;
+          --warn: #e5bd55;
+          --warn-bg: #3a3016;
+          --info: #7db1e8;
+          --info-bg: #21374f;
+          --teal: #4fc4b5;
+          --teal-bg: #17322f;
+          --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", -apple-system, "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-text-size-adjust: 100%;
+      }
+      button { font: inherit; cursor: pointer; }
+      input, select, textarea { font: inherit; color: var(--ink); }
+      [hidden] { display: none !important; }
+
+      /* ---------- 登入 ---------- */
+      .login-wrap {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 32px 28px 28px;
+      }
+      .login-card h1 {
+        margin: 0 0 4px;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .login-card .company {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .field { margin-bottom: 16px; }
+      .field label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .field input, .field select, .field textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--field-bg);
+        font-size: 16px;
+      }
+      .field textarea { resize: vertical; min-height: 84px; }
+      .field input:focus, .field select:focus, .field textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 0;
+        border-color: var(--accent);
+      }
+      .form-error {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        margin: 0 0 16px;
+      }
+      .btn-primary {
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .btn-primary:hover { background: var(--accent-dark); }
+      .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+      /* ---------- 深色頁首 ---------- */
+      .topbar {
+        background: var(--header);
+        color: var(--header-ink);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+      .topbar-inner {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .brand { font-size: 19px; font-weight: 700; letter-spacing: 0.03em; }
+      .brand small {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--header-sub);
+        letter-spacing: 0.06em;
+      }
+      .userbox { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+      .btn-logout {
+        background: transparent;
+        color: var(--header-ink);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 14px;
+      }
+      .btn-logout:hover { background: rgba(255, 255, 255, 0.12); }
+
+      .container { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
+
+      /* ---------- 分頁 ---------- */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 4px;
+        margin-bottom: 18px;
+        box-shadow: var(--shadow);
+      }
+      .tab {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 10px 8px;
+        border-radius: 7px;
+        font-weight: 600;
+        font-size: 15px;
+        white-space: nowrap;
+      }
+      .tab.active { background: var(--accent); color: #fff; }
+      .badge {
+        display: inline-block;
+        min-width: 20px;
+        padding: 0 6px;
+        margin-left: 4px;
+        border-radius: 999px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 20px;
+        text-align: center;
+        vertical-align: 1px;
+      }
+      .tab.active .badge { background: #fff; color: var(--danger); }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 22px 20px;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .panel-head h2 { margin: 0; font-size: 18px; }
+      .btn-light {
+        background: var(--card);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 7px;
+        padding: 7px 14px;
+        font-size: 14px;
+      }
+      .btn-light:hover { border-color: var(--accent); color: var(--accent); }
+      .btn-light:disabled { opacity: 0.55; cursor: not-allowed; }
+
+      /* ---------- 類型切換 ---------- */
+      .seg {
+        display: flex;
+        background: var(--seg-bg);
+        border-radius: 9px;
+        padding: 4px;
+        gap: 4px;
+        margin-bottom: 20px;
+      }
+      .seg-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 10px 6px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .seg-btn.active {
+        background: var(--card);
+        color: var(--accent);
+        box-shadow: 0 1px 3px rgba(21, 42, 66, 0.18);
+      }
+      .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .row2 .field { margin-bottom: 16px; }
+      @media (max-width: 520px) {
+        .row2 { grid-template-columns: 1fr; gap: 0; }
+      }
+      .clock-seg { display: flex; gap: 8px; }
+      .clock-btn {
+        flex: 1;
+        padding: 11px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--field-bg);
+        font-weight: 600;
+      }
+      .clock-btn.active {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .hint { font-size: 13px; color: var(--muted); margin: -6px 0 16px; }
+      .apply-note {
+        margin-top: 16px;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .apply-note.ok { background: var(--ok-bg); color: var(--ok); }
+      .apply-note.err { background: var(--danger-bg); color: var(--danger); }
+
+      /* ---------- 申請列表 ---------- */
+      .req-list { display: flex; flex-direction: column; gap: 12px; }
+      .req-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 16px 18px;
+      }
+      .req-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .req-id { font-weight: 700; color: var(--muted); font-size: 14px; }
+      .req-who { font-weight: 700; }
+      .type-chip {
+        font-size: 13px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .status {
+        margin-left: auto;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 11px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .status.st-pending { background: var(--warn-bg); color: var(--warn); }
+      .status.st-confirm { background: var(--info-bg); color: var(--info); }
+      .status.st-approved { background: var(--ok-bg); color: var(--ok); }
+      .status.st-rejected { background: var(--danger-bg); color: var(--danger); }
+      .status.st-confirmed { background: var(--teal-bg); color: var(--teal); }
+      .status.st-other { background: var(--seg-bg); color: var(--muted); }
+      .req-date { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+      .req-summary { margin: 4px 0; font-size: 15px; word-break: break-word; }
+      .req-meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+      .req-actions { display: flex; gap: 10px; margin-top: 14px; }
+      .btn-approve, .btn-reject, .btn-confirm {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+        border: 1px solid transparent;
+      }
+      .btn-approve { background: var(--ok); color: #fff; border: none; }
+      .btn-confirm { background: var(--teal); color: #fff; border: none; }
+      .btn-reject { background: var(--card); color: var(--danger); border-color: var(--danger); }
+      .btn-approve:disabled, .btn-reject:disabled, .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+      .empty {
+        background: var(--card);
+        border: 1px dashed var(--line);
+        border-radius: var(--radius);
+        padding: 36px 20px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .loading { text-align: center; color: var(--muted); padding: 28px 0; }
+      .list-msg {
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .list-msg.err { background: var(--danger-bg); color: var(--danger); }
+      .list-msg.ok { background: var(--ok-bg); color: var(--ok); }
+    </style>
+  </head>
+  <body>
+    <!-- 登入畫面 -->
+    <div id="loginView" class="login-wrap" hidden>
+      <form id="loginForm" class="login-card" autocomplete="off">
+        <h1>出勤申請系統</h1>
+        <p class="company">大恆行銷股份有限公司</p>
+        <div class="field">
+          <label for="loginAccount">帳號（姓名）</label>
+          <input id="loginAccount" type="text" placeholder="請輸入姓名" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="loginPassword">密碼</label>
+          <input id="loginPassword" type="password" placeholder="請輸入密碼" autocomplete="current-password" />
+        </div>
+        <p id="loginError" class="form-error" hidden></p>
+        <button id="loginBtn" class="btn-primary" type="submit">登入</button>
+      </form>
+    </div>
+
+    <!-- 主畫面 -->
+    <div id="appView" hidden>
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="brand">出勤申請系統<small>DAHENG ATTENDANCE</small></div>
+          <div class="userbox">
+            <span id="welcomeText"></span>
+            <button id="logoutBtn" class="btn-logout" type="button">登出</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="container">
+        <nav class="tabs" aria-label="功能切換">
+          <button class="tab active" type="button" data-tab="apply">提出申請</button>
+          <button class="tab" type="button" data-tab="mine">我的申請</button>
+          <button class="tab" type="button" data-tab="review" id="reviewTab" hidden>待我審核<span id="reviewBadge" class="badge" hidden>0</span></button>
+        </nav>
+
+        <!-- A. 提出申請 -->
+        <section id="panel-apply">
+          <div class="card">
+            <div class="seg" id="typeSeg" role="group" aria-label="申請類型">
+              <button class="seg-btn active" type="button" data-type="請假">請假</button>
+              <button class="seg-btn" type="button" data-type="補打卡">補打卡</button>
+              <button class="seg-btn" type="button" data-type="外出報備">外出報備</button>
+            </div>
+
+            <form id="applyForm" novalidate>
+              <div class="field" id="fLeaveType">
+                <label for="leaveType">假別</label>
+                <select id="leaveType">
+                  <option value="特休">特休</option>
+                  <option value="病假">病假</option>
+                  <option value="事假">事假</option>
+                  <option value="婚假">婚假</option>
+                  <option value="喪假">喪假</option>
+                  <option value="生理假">生理假</option>
+                  <option value="公假">公假</option>
+                  <option value="其他">其他</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="applyDate" id="dateLabel">日期（起）</label>
+                <input id="applyDate" type="date" />
+              </div>
+
+              <div class="field" id="fClockType" hidden>
+                <label>打卡別</label>
+                <div class="clock-seg" id="clockSeg">
+                  <button class="clock-btn active" type="button" data-clock="上班">上班</button>
+                  <button class="clock-btn" type="button" data-clock="下班">下班</button>
+                </div>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="startTime" id="startLabel">開始時間</label>
+                  <input id="startTime" type="time" />
+                </div>
+                <div class="field" id="fEndTime">
+                  <label for="endTime">結束時間</label>
+                  <input id="endTime" type="time" />
+                </div>
+              </div>
+
+              <div class="field" id="fPlace" hidden>
+                <label for="place">地點</label>
+                <input id="place" type="text" placeholder="例如：業主辦公室、守善富琚基地" />
+              </div>
+
+              <div class="field">
+                <label for="reason" id="reasonLabel">事由</label>
+                <textarea id="reason" placeholder="請簡述原因"></textarea>
+              </div>
+
+              <p class="hint" id="typeHint">送出後系統會自動寄信通知主管，核准後另行通知你。</p>
+              <p id="applyError" class="form-error" hidden></p>
+              <button id="applyBtn" class="btn-primary" type="submit">送出申請</button>
+              <div id="applyOk" class="apply-note ok" hidden></div>
+            </form>
+          </div>
+        </section>
+
+        <!-- B. 我的申請 -->
+        <section id="panel-mine" hidden>
+          <div class="panel-head">
+            <h2>我的申請紀錄</h2>
+            <button id="refreshMine" class="btn-light" type="button">重新整理</button>
+          </div>
+          <div id="mineMsg"></div>
+          <div id="mineList"></div>
+        </section>
+
+        <!-- C. 待我審核 -->
+        <section id="panel-review" hidden>
+          <div class="panel-head">
+            <h2>待審核申請</h2>
+            <button id="refreshReview" class="btn-light" type="button">重新整理</button>
+          </div>
+          <div id="reviewMsg"></div>
+          <div id="reviewList"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      'use strict';
+
+      var API_URL = 'https://script.google.com/macros/s/AKfycbxq1VnwU04UB5KV0-fGZQBhYNFL0m1Z2mAPETy6DPwpcJPbL2WI8uaeorZDEeoMQFbwCg/exec';
+      var SESSION_KEY = 'daheng_admin_session';
+      var SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
+
+      var session = null;        // {account, name, title, role, ts}
+      var currentType = '請假';
+      var clockType = '上班';
+      var mineLoaded = false;
+      var reviewLoaded = false;
+
+      function $(id) { return document.getElementById(id); }
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+      function pick(obj, keys) {
+        if (!obj) return '';
+        for (var i = 0; i < keys.length; i++) {
+          var v = obj[keys[i]];
+          if (v !== undefined && v !== null && v !== '') return v;
+        }
+        return '';
+      }
+      function todayStr() {
+        var d = new Date();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var day = ('0' + d.getDate()).slice(-2);
+        return d.getFullYear() + '-' + m + '-' + day;
+      }
+
+      /* ---------- JSONP ---------- */
+      var cbSeq = 0;
+      function api(action, payload) {
+        return new Promise(function (resolve, reject) {
+          var cbName = '__daheng_cb_' + (++cbSeq) + '_' + Date.now();
+          var script = document.createElement('script');
+          var done = false;
+          var timer = setTimeout(function () {
+            if (done) return; done = true; cleanup();
+            reject(new Error('連線逾時，請稍後再試'));
+          }, 25000);
+          function cleanup() {
+            clearTimeout(timer);
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+            if (script.parentNode) script.parentNode.removeChild(script);
+          }
+          window[cbName] = function (data) {
+            if (done) return; done = true; cleanup();
+            resolve(data);
+          };
+          script.onerror = function () {
+            if (done) return; done = true; cleanup();
+            reject(new Error('連線失敗，請檢查網路後再試'));
+          };
+          script.src = API_URL + '?action=' + encodeURIComponent(action)
+            + '&payload=' + encodeURIComponent(JSON.stringify(payload || {}))
+            + '&callback=' + encodeURIComponent(cbName);
+          document.head.appendChild(script);
+        });
+      }
+
+      function isOk(res) {
+        if (!res || typeof res !== 'object') return false;
+        if (res.ok === true || res.success === true) return true;
+        if (res.ok === false || res.success === false) return false;
+        if (res.status === 'ok' || res.result === 'success') return true;
+        return !!(res.user || res.data || res.list || res.編號 || res.id);
+      }
+      function resMsg(res, fallback) {
+        if (res && typeof res === 'object') {
+          var m = pick(res, ['msg', 'message', 'error']);
+          if (m) return String(m);
+        }
+        return fallback;
+      }
+      function resList(res) {
+        if (Array.isArray(res)) return res;
+        if (!res || typeof res !== 'object') return [];
+        var cands = [res.list, res.data, res.items, res.applications, res.rows, res.records];
+        for (var i = 0; i < cands.length; i++) {
+          if (Array.isArray(cands[i])) return cands[i];
+        }
+        return [];
+      }
+
+      /* ---------- SHA-256（優先用 WebCrypto，否則用 JS 實作） ---------- */
+      function sha256Hex(str) {
+        if (window.crypto && crypto.subtle && typeof TextEncoder !== 'undefined') {
+          return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+            var bytes = new Uint8Array(buf), out = '';
+            for (var i = 0; i < bytes.length; i++) out += ('0' + bytes[i].toString(16)).slice(-2);
+            return out;
+          }).catch(function () { return sha256Js(unescape(encodeURIComponent(str))); });
+        }
+        return Promise.resolve(sha256Js(unescape(encodeURIComponent(str))));
+      }
+      function sha256Js(ascii) {
+        function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+        var maxWord = Math.pow(2, 32), result = '';
+        var words = [], asciiBitLength = ascii.length * 8;
+        var hash = sha256Js.h = sha256Js.h || [], k = sha256Js.k = sha256Js.k || [];
+        var primeCounter = k.length, isComposite = {};
+        for (var candidate = 2; primeCounter < 64; candidate++) {
+          if (!isComposite[candidate]) {
+            for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+            hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+            k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+          }
+        }
+        ascii += '\x80';
+        while (ascii.length % 64 - 56) ascii += '\x00';
+        for (var i2 = 0; i2 < ascii.length; i2++) {
+          var j = ascii.charCodeAt(i2);
+          if (j >> 8) return ''; // 輸入應已先轉成位元組字串
+          words[i2 >> 2] |= j << ((3 - i2) % 4) * 8;
+        }
+        words[words.length] = (asciiBitLength / maxWord) | 0;
+        words[words.length] = asciiBitLength;
+        for (var j2 = 0; j2 < words.length;) {
+          var w = words.slice(j2, j2 += 16), oldHash = hash;
+          hash = hash.slice(0, 8);
+          for (var i3 = 0; i3 < 64; i3++) {
+            var w15 = w[i3 - 15], w2 = w[i3 - 2];
+            var a = hash[0], e = hash[4];
+            var temp1 = hash[7]
+              + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25))
+              + ((e & hash[5]) ^ ((~e) & hash[6]))
+              + k[i3]
+              + (w[i3] = (i3 < 16) ? w[i3] : (
+                  w[i3 - 16]
+                  + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3))
+                  + w[i3 - 7]
+                  + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))
+                ) | 0);
+            var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22))
+              + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+            hash = [(temp1 + temp2) | 0].concat(hash);
+            hash[4] = (hash[4] + temp1) | 0;
+          }
+          for (var i4 = 0; i4 < 8; i4++) hash[i4] = (hash[i4] + oldHash[i4]) | 0;
+        }
+        for (var i5 = 0; i5 < 8; i5++) {
+          for (var j3 = 3; j3 + 1; j3--) {
+            var b = (hash[i5] >> (j3 * 8)) & 255;
+            result += ((b < 16) ? '0' : '') + b.toString(16);
+          }
+        }
+        return result;
+      }
+
+      /* ---------- Session ---------- */
+      function loadSession() {
+        try {
+          var raw = localStorage.getItem(SESSION_KEY);
+          if (!raw) return null;
+          var s = JSON.parse(raw);
+          if (!s || typeof s !== 'object') return null;
+          var ts = pick(s, ['ts', 'loginAt', 'time', 'timestamp', '登入時間']);
+          ts = ts ? Number(ts) : 0;
+          if (ts && Date.now() - ts > SESSION_TTL) {
+            localStorage.removeItem(SESSION_KEY);
+            return null;
+          }
+          var account = String(pick(s, ['account', '帳號', 'name', '姓名']) || '');
+          if (!account) return null;
+          return {
+            account: account,
+            name: String(pick(s, ['name', '姓名']) || account),
+            title: String(pick(s, ['title', '職稱']) || ''),
+            role: String(pick(s, ['role', '角色']) || ''),
+            ts: ts || Date.now()
+          };
+        } catch (e) { return null; }
+      }
+      function saveSession(s) {
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+      }
+      function clearSession() {
+        try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+      }
+      function isAdmin() {
+        if (!session) return false;
+        return /管理員|admin/i.test(session.role || '');
+      }
+
+      /* ---------- 畫面切換 ---------- */
+      function showLogin() {
+        $('appView').hidden = true;
+        $('loginView').hidden = false;
+      }
+      function showApp() {
+        $('loginView').hidden = true;
+        $('appView').hidden = false;
+        $('welcomeText').textContent = '歡迎，' + session.name + (session.title ? '（' + session.title + '）' : '');
+        $('reviewTab').hidden = !isAdmin();
+        if (isAdmin()) refreshReviewBadge();
+      }
+
+      /* ---------- 登入 / 登出 ---------- */
+      $('loginForm').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var account = $('loginAccount').value.trim();
+        var password = $('loginPassword').value;
+        var errBox = $('loginError');
+        errBox.hidden = true;
+        if (!account || !password) {
+          errBox.textContent = '請輸入帳號與密碼';
+          errBox.hidden = false;
+          return;
+        }
+        var btn = $('loginBtn');
+        btn.disabled = true;
+        btn.textContent = '登入中…';
+        sha256Hex(password).then(function (hash) {
+          return api('login', { '帳號': account, '密碼雜湊': hash });
+        }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '登入失敗，請確認帳號密碼'));
+          var u = (res && (res.user || res.data)) || res || {};
+          session = {
+            account: String(pick(u, ['帳號', 'account']) || account),
+            name: String(pick(u, ['姓名', 'name']) || account),
+            title: String(pick(u, ['職稱', 'title']) || ''),
+            role: String(pick(u, ['角色', 'role']) || ''),
+            ts: Date.now()
+          };
+          saveSession(session);
+          $('loginPassword').value = '';
+          showApp();
+        }).catch(function (err) {
+          errBox.textContent = err.message || '登入失敗，請稍後再試';
+          errBox.hidden = false;
+        }).then(function () {
+          btn.disabled = false;
+          btn.textContent = '登入';
+        });
+      });
+
+      $('logoutBtn').addEventListener('click', function () {
+        clearSession();
+        session = null;
+        mineLoaded = false;
+        reviewLoaded = false;
+        showLogin();
+      });
+
+      /* ---------- 分頁切換 ---------- */
+      var tabs = document.querySelectorAll('.tab');
+      function switchTab(name) {
+        for (var i = 0; i < tabs.length; i++) {
+          tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === name);
+        }
+        $('panel-apply').hidden = name !== 'apply';
+        $('panel-mine').hidden = name !== 'mine';
+        $('panel-review').hidden = name !== 'review';
+        if (name === 'mine') loadMine();
+        if (name === 'review') loadReview();
+      }
+      for (var ti = 0; ti < tabs.length; ti++) {
+        tabs[ti].addEventListener('click', function () {
+          switchTab(this.getAttribute('data-tab'));
+        });
+      }
+
+      /* ---------- 申請表單 ---------- */
+      var typeBtns = document.querySelectorAll('#typeSeg .seg-btn');
+      function setType(type) {
+        currentType = type;
+        for (var i = 0; i < typeBtns.length; i++) {
+          typeBtns[i].classList.toggle('active', typeBtns[i].getAttribute('data-type') === type);
+        }
+        $('fLeaveType').hidden = type !== '請假';
+        $('fClockType').hidden = type !== '補打卡';
+        $('fEndTime').hidden = type === '補打卡';
+        $('fPlace').hidden = type !== '外出報備';
+        $('dateLabel').textContent = type === '請假' ? '日期（起）' : '日期';
+        $('startLabel').textContent = type === '補打卡' ? '實際時間' : '開始時間';
+        $('reasonLabel').textContent = type === '補打卡' ? '事由（原因）' : '事由';
+        $('reason').placeholder = type === '補打卡'
+          ? '例如：忘記打卡、LINE 定位打不到、外出公務'
+          : (type === '外出報備' ? '例如：前往業主處確認合約進度' : '請簡述原因');
+        $('typeHint').textContent = type === '外出報備'
+          ? '外出報備為確認制：送出即成立並寄信通知主管，主管事後確認即可。'
+          : '送出後系統會自動寄信通知主管，核准後另行通知你。';
+        $('applyError').hidden = true;
+        $('applyOk').hidden = true;
+      }
+      for (var bi = 0; bi < typeBtns.length; bi++) {
+        typeBtns[bi].addEventListener('click', function () {
+          setType(this.getAttribute('data-type'));
+        });
+      }
+      var clockBtns = document.querySelectorAll('#clockSeg .clock-btn');
+      for (var ci = 0; ci < clockBtns.length; ci++) {
+        clockBtns[ci].addEventListener('click', function () {
+          clockType = this.getAttribute('data-clock');
+          for (var j = 0; j < clockBtns.length; j++) {
+            clockBtns[j].classList.toggle('active', clockBtns[j] === this);
+          }
+        });
+      }
+
+      function showApplyError(msg) {
+        var box = $('applyError');
+        box.textContent = msg;
+        box.hidden = false;
+        $('applyOk').hidden = true;
+      }
+
+      $('applyForm').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!session) { showLogin(); return; }
+        var date = $('applyDate').value;
+        var start = $('startTime').value;
+        var end = $('endTime').value;
+        var reason = $('reason').value.trim();
+        var place = $('place').value.trim();
+
+        if (!date) { showApplyError('請選擇日期'); return; }
+        if (!start) { showApplyError(currentType === '補打卡' ? '請填寫實際打卡時間' : '請填寫開始時間'); return; }
+        if (currentType !== '補打卡') {
+          if (!end) { showApplyError('請填寫結束時間'); return; }
+          if (end <= start) { showApplyError('結束時間需晚於開始時間'); return; }
+        }
+        if (currentType === '外出報備' && !place) { showApplyError('請填寫外出地點'); return; }
+        if (!reason) { showApplyError('請填寫事由'); return; }
+
+        var payload = {
+          '帳號': session.account,
+          '類型': currentType,
+          '假別': currentType === '請假' ? $('leaveType').value : '',
+          '日期': date,
+          '開始時間': start,
+          '結束時間': currentType === '補打卡' ? '' : end,
+          '打卡別': currentType === '補打卡' ? clockType : '',
+          '地點': currentType === '外出報備' ? place : '',
+          '事由': reason
+        };
+
+        var btn = $('applyBtn');
+        btn.disabled = true;
+        btn.textContent = '送出中…';
+        $('applyError').hidden = true;
+        $('applyOk').hidden = true;
+
+        api('apply', payload).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '送出失敗，請稍後再試'));
+          var id = pick(res, ['編號', 'id']) || pick(res.data || {}, ['編號', 'id']);
+          var okBox = $('applyOk');
+          okBox.textContent = '✓ 已送出' + (id ? '，編號 ' + id : '') + '，主管已收到通知信。';
+          okBox.className = 'apply-note ok';
+          okBox.hidden = false;
+          $('reason').value = '';
+          $('place').value = '';
+          mineLoaded = false;
+          if (isAdmin()) reviewLoaded = false;
+        }).catch(function (err) {
+          showApplyError(err.message || '送出失敗，請稍後再試');
+        }).then(function () {
+          btn.disabled = false;
+          btn.textContent = '送出申請';
+        });
+      });
+
+      /* ---------- 列表渲染 ---------- */
+      function statusInfo(status) {
+        switch (status) {
+          case '待審核': return 'st-pending';
+          case '待確認': return 'st-confirm';
+          case '已核准': return 'st-approved';
+          case '已駁回': return 'st-rejected';
+          case '已確認': return 'st-confirmed';
+          default: return 'st-other';
+        }
+      }
+      function itemSummary(item, type) {
+        var parts = [];
+        var leave = pick(item, ['假別']);
+        var clock = pick(item, ['打卡別']);
+        var place = pick(item, ['地點']);
+        var start = pick(item, ['開始時間']);
+        var end = pick(item, ['結束時間']);
+        var reason = pick(item, ['事由', '原因']);
+        if (type === '請假' && leave) parts.push(leave);
+        if (type === '補打卡' && clock) parts.push(clock + '打卡');
+        if (type === '外出報備' && place) parts.push('地點：' + place);
+        if (start && end) parts.push(start + ' – ' + end);
+        else if (start) parts.push(start);
+        if (reason) parts.push(reason);
+        return parts.join('・');
+      }
+      function itemDate(item) {
+        var d = pick(item, ['日期']);
+        return d ? String(d).slice(0, 10) : '';
+      }
+      function renderMine(items) {
+        var box = $('mineList');
+        if (!items.length) {
+          box.innerHTML = '<div class="empty">尚無申請紀錄</div>';
+          return;
+        }
+        var html = '<div class="req-list">';
+        items.forEach(function (item) {
+          var type = String(pick(item, ['類型']) || '');
+          var status = String(pick(item, ['狀態']) || '');
+          var reviewer = String(pick(item, ['審核人', '審核者']) || '');
+          html += '<article class="req-card">'
+            + '<div class="req-top">'
+            + (pick(item, ['編號', 'id']) ? '<span class="req-id">' + esc(pick(item, ['編號', 'id'])) + '</span>' : '')
+            + '<span class="type-chip">' + esc(type) + '</span>'
+            + '<span class="status ' + statusInfo(status) + '">' + esc(status) + '</span>'
+            + '</div>'
+            + '<div class="req-date">' + esc(itemDate(item)) + '</div>'
+            + '<p class="req-summary">' + esc(itemSummary(item, type)) + '</p>'
+            + '<div class="req-meta">審核人：' + (reviewer ? esc(reviewer) : '—') + '</div>'
+            + '</article>';
+        });
+        html += '</div>';
+        box.innerHTML = html;
+      }
+      function renderReview(items) {
+        var box = $('reviewList');
+        if (!items.length) {
+          box.innerHTML = '<div class="empty">目前沒有待審核的申請</div>';
+          return;
+        }
+        var html = '<div class="req-list">';
+        items.forEach(function (item, idx) {
+          var type = String(pick(item, ['類型']) || '');
+          var status = String(pick(item, ['狀態']) || '');
+          var who = String(pick(item, ['申請人', '姓名', '帳號']) || '');
+          var id = String(pick(item, ['編號', 'id']) || '');
+          html += '<article class="req-card">'
+            + '<div class="req-top">'
+            + (id ? '<span class="req-id">' + esc(id) + '</span>' : '')
+            + '<span class="req-who">' + esc(who) + '</span>'
+            + '<span class="type-chip">' + esc(type) + '</span>'
+            + '<span class="status ' + statusInfo(status) + '">' + esc(status) + '</span>'
+            + '</div>'
+            + '<div class="req-date">' + esc(itemDate(item)) + '</div>'
+            + '<p class="req-summary">' + esc(itemSummary(item, type)) + '</p>'
+            + '<div class="req-actions" data-idx="' + idx + '" data-id="' + esc(id) + '" data-type="' + esc(type) + '">'
+            + (type === '外出報備'
+                ? '<button class="btn-confirm" type="button" data-act="已確認">確認</button>'
+                : '<button class="btn-approve" type="button" data-act="已核准">核准</button>'
+                  + '<button class="btn-reject" type="button" data-act="已駁回">駁回</button>')
+            + '</div>'
+            + '</article>';
+        });
+        html += '</div>';
+        box.innerHTML = html;
+        var groups = box.querySelectorAll('.req-actions');
+        for (var i = 0; i < groups.length; i++) {
+          var btns = groups[i].querySelectorAll('button');
+          for (var j = 0; j < btns.length; j++) {
+            btns[j].addEventListener('click', onReviewClick);
+          }
+        }
+      }
+      function onReviewClick() {
+        var group = this.parentNode;
+        var id = group.getAttribute('data-id');
+        var newStatus = this.getAttribute('data-act');
+        var btns = group.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+        this.textContent = '處理中…';
+        api('review_application', {
+          '管理員帳號': session.account,
+          '編號': id,
+          '狀態': newStatus
+        }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '審核失敗，請稍後再試'));
+          var msgBox = $('reviewMsg');
+          msgBox.innerHTML = '<div class="list-msg ok">✓ ' + esc(id) + ' 已' + esc(newStatus === '已確認' ? '確認' : (newStatus === '已核准' ? '核准' : '駁回')) + '，已通知申請人。</div>';
+          reviewLoaded = false;
+          loadReview();
+        }).catch(function (err) {
+          var msgBox = $('reviewMsg');
+          msgBox.innerHTML = '<div class="list-msg err">' + esc(err.message || '審核失敗，請稍後再試') + '</div>';
+          for (var i = 0; i < btns.length; i++) btns[i].disabled = false;
+        });
+      }
+
+      /* ---------- 載入列表 ---------- */
+      function loadMine() {
+        if (!session) return;
+        var box = $('mineList');
+        box.innerHTML = '<div class="loading">載入中…</div>';
+        $('mineMsg').innerHTML = '';
+        $('refreshMine').disabled = true;
+        api('my_applications', { '帳號': session.account }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '載入失敗'));
+          renderMine(resList(res));
+          mineLoaded = true;
+        }).catch(function (err) {
+          box.innerHTML = '';
+          $('mineMsg').innerHTML = '<div class="list-msg err">' + esc(err.message || '載入失敗，請稍後再試') + '</div>';
+        }).then(function () { $('refreshMine').disabled = false; });
+      }
+      function loadReview() {
+        if (!session || !isAdmin()) return;
+        var box = $('reviewList');
+        box.innerHTML = '<div class="loading">載入中…</div>';
+        $('refreshReview').disabled = true;
+        api('pending_list', { '管理員帳號': session.account }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '載入失敗'));
+          var items = resList(res);
+          renderReview(items);
+          setReviewBadge(items.length);
+          reviewLoaded = true;
+        }).catch(function (err) {
+          box.innerHTML = '';
+          $('reviewMsg').innerHTML = '<div class="list-msg err">' + esc(err.message || '載入失敗，請稍後再試') + '</div>';
+        }).then(function () { $('refreshReview').disabled = false; });
+      }
+      function setReviewBadge(n) {
+        var badge = $('reviewBadge');
+        badge.textContent = n;
+        badge.hidden = !(n > 0);
+      }
+      function refreshReviewBadge() {
+        api('pending_list', { '管理員帳號': session.account }).then(function (res) {
+          if (isOk(res)) setReviewBadge(resList(res).length);
+        }).catch(function () {});
+      }
+      $('refreshMine').addEventListener('click', loadMine);
+      $('refreshReview').addEventListener('click', function () { $('reviewMsg').innerHTML = ''; loadReview(); });
+
+      /* ---------- 初始化 ---------- */
+      $('applyDate').value = todayStr();
+      $('startTime').value = '09:30';
+      $('endTime').value = '18:00';
+      setType('請假');
+      session = loadSession();
+      if (session) showApp(); else showLogin();
+    </script>
+  </body>
+</html>
