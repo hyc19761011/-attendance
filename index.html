@@ -378,6 +378,76 @@
       }
       .list-msg.err { background: var(--danger-bg); color: var(--danger); }
       .list-msg.ok { background: var(--ok-bg); color: var(--ok); }
+
+      /* ---------- 全部申請（管理員） ---------- */
+      .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .filter-row label { font-weight: 600; font-size: 15px; }
+      .filter-row select {
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--field-bg);
+        font-size: 15px;
+      }
+      .filter-count { font-size: 13px; color: var(--muted); }
+      .btn-delete {
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        background: var(--card);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+      }
+      .btn-delete:hover { background: var(--danger-bg); }
+      .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+      .req-actions .btn-delete { flex: 0 0 auto; margin-left: auto; }
+
+      /* ---------- 刪除確認對話框 ---------- */
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(10, 20, 35, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-card {
+        background: var(--card);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 24px 22px;
+        width: 100%;
+        max-width: 380px;
+      }
+      .modal-card h3 { margin: 0 0 10px; font-size: 17px; }
+      .modal-card p { margin: 0 0 20px; font-size: 15px; }
+      .modal-actions { display: flex; gap: 10px; }
+      .modal-actions button {
+        flex: 1;
+        padding: 11px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .btn-cancel { background: var(--card); border: 1px solid var(--line); color: var(--ink); }
+      .btn-danger-solid { background: #b3372a; color: #fff; border: none; }
+      .btn-danger-solid:hover { background: #9c2f24; }
+      .btn-cancel:disabled, .btn-danger-solid:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      @media (max-width: 480px) {
+        .tab { font-size: 14px; padding: 9px 4px; }
+      }
     </style>
   </head>
   <body>
@@ -416,6 +486,7 @@
           <button class="tab active" type="button" data-tab="apply">提出申請</button>
           <button class="tab" type="button" data-tab="mine">我的申請</button>
           <button class="tab" type="button" data-tab="review" id="reviewTab" hidden>待我審核<span id="reviewBadge" class="badge" hidden>0</span></button>
+          <button class="tab" type="button" data-tab="all" id="allTab" hidden>全部申請</button>
         </nav>
 
         <!-- A. 提出申請 -->
@@ -503,7 +574,36 @@
           <div id="reviewMsg"></div>
           <div id="reviewList"></div>
         </section>
+
+        <!-- D. 全部申請（僅管理員） -->
+        <section id="panel-all" hidden>
+          <div class="panel-head">
+            <h2>全部申請</h2>
+            <button id="refreshAll" class="btn-light" type="button">重新整理</button>
+          </div>
+          <div class="filter-row">
+            <label for="monthFilter">月份</label>
+            <select id="monthFilter">
+              <option value="">全部</option>
+            </select>
+            <span id="allCount" class="filter-count"></span>
+          </div>
+          <div id="allMsg"></div>
+          <div id="allList"></div>
+        </section>
       </main>
+    </div>
+
+    <!-- 刪除確認對話框 -->
+    <div id="deleteModal" class="modal-mask" hidden>
+      <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <h3 id="deleteModalTitle">刪除申請</h3>
+        <p id="deleteModalText"></p>
+        <div class="modal-actions">
+          <button id="deleteCancel" class="btn-cancel" type="button">取消</button>
+          <button id="deleteConfirm" class="btn-danger-solid" type="button">確認刪除</button>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -518,6 +618,9 @@
       var clockType = '上班';
       var mineLoaded = false;
       var reviewLoaded = false;
+      var allLoaded = false;
+      var allItems = [];
+      var pendingDeleteId = '';
 
       function $(id) { return document.getElementById(id); }
       function esc(s) {
@@ -705,6 +808,7 @@
         $('appView').hidden = false;
         $('welcomeText').textContent = '歡迎，' + session.name + (session.title ? '（' + session.title + '）' : '');
         $('reviewTab').hidden = !isAdmin();
+        $('allTab').hidden = !isAdmin();
         if (isAdmin()) refreshReviewBadge();
       }
 
@@ -752,6 +856,10 @@
         session = null;
         mineLoaded = false;
         reviewLoaded = false;
+        allLoaded = false;
+        allItems = [];
+        pendingDeleteId = '';
+        $('deleteModal').hidden = true;
         showLogin();
       });
 
@@ -764,8 +872,10 @@
         $('panel-apply').hidden = name !== 'apply';
         $('panel-mine').hidden = name !== 'mine';
         $('panel-review').hidden = name !== 'review';
+        $('panel-all').hidden = name !== 'all';
         if (name === 'mine') loadMine();
         if (name === 'review') loadReview();
+        if (name === 'all') loadAll();
       }
       for (var ti = 0; ti < tabs.length; ti++) {
         tabs[ti].addEventListener('click', function () {
@@ -864,7 +974,7 @@
           $('reason').value = '';
           $('place').value = '';
           mineLoaded = false;
-          if (isAdmin()) reviewLoaded = false;
+          if (isAdmin()) { reviewLoaded = false; allLoaded = false; }
         }).catch(function (err) {
           showApplyError(err.message || '送出失敗，請稍後再試');
         }).then(function () {
@@ -1034,6 +1144,132 @@
           if (isOk(res)) setReviewBadge(resList(res).length);
         }).catch(function () {});
       }
+      /* ---------- 全部申請（管理員） ---------- */
+      function monthLabel(m) {
+        var parts = String(m).split('-');
+        if (parts.length === 2) return parts[0] + ' 年 ' + Number(parts[1]) + ' 月';
+        return String(m);
+      }
+      function buildMonthOptions() {
+        var sel = $('monthFilter');
+        var prev = sel.value;
+        var seen = {};
+        var months = [];
+        allItems.forEach(function (item) {
+          var d = itemDate(item);
+          var m = d && d.length >= 7 ? d.slice(0, 7) : '';
+          if (m && !seen[m]) { seen[m] = true; months.push(m); }
+        });
+        months.sort();
+        months.reverse();
+        var html = '<option value="">全部</option>';
+        months.forEach(function (m) {
+          html += '<option value="' + esc(m) + '"' + (m === prev ? ' selected' : '') + '>' + esc(monthLabel(m)) + '</option>';
+        });
+        sel.innerHTML = html;
+        sel.value = seen[prev] ? prev : '';
+      }
+      function renderAll() {
+        var month = $('monthFilter').value;
+        var items = month ? allItems.filter(function (item) {
+          return itemDate(item).slice(0, 7) === month;
+        }) : allItems;
+        $('allCount').textContent = '共 ' + items.length + ' 筆';
+        var box = $('allList');
+        if (!items.length) {
+          box.innerHTML = '<div class="empty">' + (month ? '此月份尚無申請紀錄' : '尚無申請紀錄') + '</div>';
+          return;
+        }
+        var html = '<div class="req-list">';
+        items.forEach(function (item) {
+          var type = String(pick(item, ['類型']) || '');
+          var status = String(pick(item, ['狀態']) || '');
+          var who = String(pick(item, ['申請人', '姓名', '帳號']) || '');
+          var id = String(pick(item, ['編號', 'id']) || '');
+          var reviewer = String(pick(item, ['審核人', '審核者']) || '');
+          html += '<article class="req-card">'
+            + '<div class="req-top">'
+            + (id ? '<span class="req-id">' + esc(id) + '</span>' : '')
+            + '<span class="req-who">' + esc(who) + '</span>'
+            + '<span class="type-chip">' + esc(type) + '</span>'
+            + '<span class="status ' + statusInfo(status) + '">' + esc(status) + '</span>'
+            + '</div>'
+            + '<div class="req-date">' + esc(itemDate(item)) + '</div>'
+            + '<p class="req-summary">' + esc(itemSummary(item, type)) + '</p>'
+            + '<div class="req-meta">審核人：' + (reviewer ? esc(reviewer) : '—') + '</div>'
+            + (id
+                ? '<div class="req-actions"><button class="btn-delete" type="button" data-id="' + esc(id) + '">刪除</button></div>'
+                : '')
+            + '</article>';
+        });
+        html += '</div>';
+        box.innerHTML = html;
+        var delBtns = box.querySelectorAll('.btn-delete');
+        for (var i = 0; i < delBtns.length; i++) {
+          delBtns[i].addEventListener('click', function () {
+            openDeleteModal(this.getAttribute('data-id'));
+          });
+        }
+      }
+      function loadAll() {
+        if (!session || !isAdmin()) return;
+        var box = $('allList');
+        box.innerHTML = '<div class="loading">載入中…</div>';
+        $('refreshAll').disabled = true;
+        api('admin_all_applications', { '管理員帳號': session.account }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '載入失敗'));
+          allItems = resList(res);
+          buildMonthOptions();
+          renderAll();
+          allLoaded = true;
+        }).catch(function (err) {
+          box.innerHTML = '';
+          $('allMsg').innerHTML = '<div class="list-msg err">' + esc(err.message || '載入失敗，請稍後再試') + '</div>';
+        }).then(function () { $('refreshAll').disabled = false; });
+      }
+      $('refreshAll').addEventListener('click', function () { $('allMsg').innerHTML = ''; loadAll(); });
+      $('monthFilter').addEventListener('change', renderAll);
+
+      /* ---------- 刪除申請 ---------- */
+      function openDeleteModal(id) {
+        pendingDeleteId = id;
+        $('deleteModalText').textContent = '確定刪除編號 ' + id + ' 的申請嗎？刪除後無法復原。';
+        $('deleteModal').hidden = false;
+      }
+      function closeDeleteModal() {
+        $('deleteModal').hidden = true;
+        pendingDeleteId = '';
+      }
+      $('deleteCancel').addEventListener('click', closeDeleteModal);
+      $('deleteModal').addEventListener('click', function (ev) {
+        if (ev.target === this && !$('deleteConfirm').disabled) closeDeleteModal();
+      });
+      $('deleteConfirm').addEventListener('click', function () {
+        var id = pendingDeleteId;
+        if (!id || !session) { closeDeleteModal(); return; }
+        var confirmBtn = $('deleteConfirm');
+        var cancelBtn = $('deleteCancel');
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        confirmBtn.textContent = '刪除中…';
+        api('admin_delete_application', {
+          '管理員帳號': session.account,
+          '編號': id
+        }).then(function (res) {
+          if (!isOk(res)) throw new Error(resMsg(res, '刪除失敗，請稍後再試'));
+          closeDeleteModal();
+          $('allMsg').innerHTML = '<div class="list-msg ok">✓ 已刪除編號 ' + esc(id) + ' 的申請。</div>';
+          loadAll();
+        }).catch(function (err) {
+          closeDeleteModal();
+          $('allMsg').innerHTML = '<div class="list-msg err">' + esc(err.message || '刪除失敗，請稍後再試') + '</div>';
+        }).then(function () {
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+          confirmBtn.textContent = '確認刪除';
+        });
+      });
+
       $('refreshMine').addEventListener('click', loadMine);
       $('refreshReview').addEventListener('click', function () { $('reviewMsg').innerHTML = ''; loadReview(); });
 
