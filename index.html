@@ -1095,7 +1095,7 @@
         items.forEach(function (item, idx) {
           var type = String(pick(item, ['類型']) || '');
           var status = String(pick(item, ['狀態']) || '');
-          var who = String(pick(item, ['申請人', '姓名', '帳號']) || '');
+          var who = String(pick(item, ['申請人姓名', '申請人帳號', '申請人', '姓名']) || '');
           var id = String(pick(item, ['編號', 'id']) || '');
           html += '<article class="req-card">'
             + '<div class="req-top">'
@@ -1252,7 +1252,7 @@
         items.forEach(function (item) {
           var type = String(pick(item, ['類型']) || '');
           var status = String(pick(item, ['狀態']) || '');
-          var who = String(pick(item, ['申請人', '姓名', '帳號']) || '');
+          var who = String(pick(item, ['申請人姓名', '申請人帳號', '申請人', '姓名']) || '');
           var id = String(pick(item, ['編號', 'id']) || '');
           var reviewer = String(pick(item, ['審核人', '審核者']) || '');
           var st = fmtTime(pick(item, ['開始時間']));
