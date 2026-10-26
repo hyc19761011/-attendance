@@ -1041,14 +1041,24 @@
         if (type === '請假' && leave) parts.push(leave);
         if (type === '補打卡' && clock) parts.push(clock + '打卡');
         if (type === '外出報備' && place) parts.push('地點：' + place);
-        if (start && end) parts.push(start + ' – ' + end);
-        else if (start) parts.push(start);
+        var st = fmtTime(start), en = fmtTime(end);
+        if (st && en) parts.push(st + ' – ' + en);
+        else if (st) parts.push(st);
+        else if (en) parts.push(en);
         if (reason) parts.push(reason);
         return parts.join('・');
       }
       function itemDate(item) {
         var d = pick(item, ['日期']);
         return d ? String(d).slice(0, 10) : '';
+      }
+      /* 後端時間可能是試算表 Date 序列化字串（如 1899-12-30T14:00:00.000Z），統一顯示 HH:mm */
+      function fmtTime(v) {
+        if (v === undefined || v === null || v === '') return '';
+        var s = String(v).trim();
+        var m = s.match(/(\d{1,2}):(\d{2})/);
+        if (!m) return s;
+        return ('0' + Number(m[1])).slice(-2) + ':' + m[2];
       }
       function renderMine(items) {
         var box = $('mineList');
@@ -1245,9 +1255,9 @@
           var who = String(pick(item, ['申請人', '姓名', '帳號']) || '');
           var id = String(pick(item, ['編號', 'id']) || '');
           var reviewer = String(pick(item, ['審核人', '審核者']) || '');
-          var start = pick(item, ['開始時間']);
-          var end = pick(item, ['結束時間']);
-          var timeText = start && end ? start + ' – ' + end : (start ? String(start) : '');
+          var st = fmtTime(pick(item, ['開始時間']));
+          var en = fmtTime(pick(item, ['結束時間']));
+          var timeText = st && en ? st + ' – ' + en : (st || en);
           html += '<tr>'
             + '<td class="c-id">' + esc(id) + '</td>'
             + '<td class="c-who">' + esc(who) + '</td>'
@@ -1329,6 +1339,7 @@
             $('allMsg').innerHTML = okHtml;
             reviewLoaded = false;
             loadAll();
+            refreshReviewBadge();
           }
         }).catch(function (err) {
           closeDeleteModal();
