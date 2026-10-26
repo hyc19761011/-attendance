@@ -561,13 +561,20 @@
             <form id="applyForm" novalidate>
               <div class="field">
                 <label for="site">案場</label>
-                <input id="site" type="text" list="siteList" placeholder="請輸入或選擇案場" autocomplete="off" />
-                <datalist id="siteList">
-                  <option value="守善大悅"></option>
-                  <option value="守善富琚"></option>
-                  <option value="世霖森park"></option>
-                  <option value="印象好好"></option>
-                </datalist>
+                <select id="site">
+                  <option value="">請選擇案場</option>
+                  <option value="守善大悅">守善大悅</option>
+                  <option value="守善富琚">守善富琚</option>
+                  <option value="世霖森park">世霖森park</option>
+                  <option value="印象好好">印象好好</option>
+                  <option value="新祐京璽">新祐京璽</option>
+                  <option value="謙知樹">謙知樹</option>
+                  <option value="其他">其他（自填）</option>
+                </select>
+              </div>
+              <div class="field" id="fSiteCustom" hidden>
+                <label for="siteCustom">自填案場</label>
+                <input id="siteCustom" type="text" placeholder="請輸入案場名稱" autocomplete="off" />
               </div>
 
               <div class="field" id="fLeaveType">
@@ -1001,6 +1008,12 @@
         });
       }
 
+      /* ---------- 案場下拉：選「其他（自填）」才顯示自填框 ---------- */
+      $('site').addEventListener('change', function () {
+        $('fSiteCustom').hidden = this.value !== '其他';
+        if (this.value === '其他') $('siteCustom').focus();
+      });
+
       function showApplyError(msg) {
         var box = $('applyError');
         box.textContent = msg;
@@ -1012,13 +1025,15 @@
         ev.preventDefault();
         if (!session) { showLogin(); return; }
         var date = $('applyDate').value;
-        var site = $('site').value.trim();
+        var siteSel = $('site').value;
+        var site = siteSel === '其他' ? $('siteCustom').value.trim() : siteSel;
         var start = $('startTime').value;
         var end = $('endTime').value;
         var reason = $('reason').value.trim();
         var place = $('place').value.trim();
 
-        if (!site) { showApplyError('請填寫案場'); return; }
+        if (!siteSel) { showApplyError('請填寫案場'); return; }
+        if (siteSel === '其他' && !site) { showApplyError('請輸入自填案場'); return; }
         if (!date) { showApplyError('請選擇日期'); return; }
         if (!start) { showApplyError(currentType === '補打卡' ? '請填寫實際打卡時間' : '請填寫開始時間'); return; }
         if (currentType !== '補打卡') {
